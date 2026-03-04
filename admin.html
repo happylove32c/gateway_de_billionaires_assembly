@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+    <title>PhotoUpload - Modern Gallery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: white;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+        }
+
+        /* Upload Area */
+        .upload-container {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            margin-bottom: 3rem;
+        }
+
+        .upload-area {
+            border: 3px dashed #cbd5e0;
+            border-radius: 16px;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .upload-icon {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 1rem;
+            color: #667eea;
+        }
+
+        .upload-area h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #2d3748;
+        }
+
+        .upload-area p {
+            color: #718096;
+            margin-bottom: 1rem;
+        }
+
+        .upload-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            display: inline-block;
+        }
+
+        .upload-btn:hover {
+            background: #5a67d8;
+        }
+
+        .file-info {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #718096;
+        }
+
+        /* Preview Section */
+        .preview-section {
+            margin-top: 2rem;
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .preview-header h2 {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 500;
+        }
+
+        .upload-status {
+            background: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #48bb78;
+            display: none;
+        }
+
+        .upload-status.show {
+            display: block;
+        }
+
+        .upload-status.error {
+            color: #f56565;
+        }
+
+        /* Gallery Grid */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .gallery-item {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .image-container {
+            position: relative;
+            padding-top: 75%; /* 4:3 Aspect Ratio */
+            overflow: hidden;
+        }
+
+        .image-container img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .gallery-item:hover .image-container img {
+            transform: scale(1.05);
+        }
+
+        .item-details {
+            padding: 1rem;
+        }
+
+        .item-name {
+            font-size: 0.9rem;
+            color: #4a5568;
+            margin-bottom: 0.5rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .item-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #718096;
+        }
+
+        .item-size {
+            background: #f7fafc;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #a0aec0;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            padding: 0.25rem;
+        }
+
+        .delete-btn:hover {
+            color: #f56565;
+        }
+
+        .delete-btn img {
+            width: 18px;
+            height: 18px;
+            filter: invert(40%) sepia(0%) saturate(0%) hue-rotate(0deg);
+            transition: filter 0.2s ease;
+        }
+
+        .delete-btn:hover img {
+            filter: invert(27%) sepia(51%) saturate(2878%) hue-rotate(346deg) brightness(104%) contrast(97%);
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            position: relative;
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .progress-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+
+        /* Loading State */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #e2e8f0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 16px;
+            color: #718096;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 1rem;
+            color: #cbd5e0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .upload-area {
+                padding: 2rem 1rem;
+            }
+
+            .gallery-grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>PhotoUpload</h1>
+            <p class="subtitle">Drag and drop or click to upload your photos</p>
+        </header>
+
+        
+
+        <div class="upload-container">
+            <div class="upload-area" id="uploadArea">
+                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                <h3>Upload Photos</h3>
+                <p>Choose photos or drag and drop them here</p>
+                <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+                <button class="upload-btn" id="selectFilesBtn">Select Files</button>
+                <div class="file-info" id="fileInfo"></div>
+            </div>
+            
+            <div class="progress-bar" id="progressBar" style="display: none;">
+                <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+            </div>
+        </div>
+
+        <div class="preview-section">
+            <div class="preview-header">
+                <h2>Your Photos</h2>
+                <div class="upload-status" id="uploadStatus"></div>
+            </div>
+
+            <div id="gallery" class="gallery-grid">
+                <!-- Gallery items will be added here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class PhotoUploader {
+            constructor() {
+                this.uploadArea = document.getElementById('uploadArea');
+                this.fileInput = document.getElementById('fileInput');
+                this.selectFilesBtn = document.getElementById('selectFilesBtn');
+                this.fileInfo = document.getElementById('fileInfo');
+                this.gallery = document.getElementById('gallery');
+                this.uploadStatus = document.getElementById('uploadStatus');
+                this.progressBar = document.getElementById('progressBar');
+                this.progressFill = document.getElementById('progressFill');
+                
+                this.photos = this.loadFromStorage();
+                
+                this.initEventListeners();
+                this.renderGallery();
+            }
+
+            initEventListeners() {
+                // Click upload area to select files
+                this.uploadArea.addEventListener('click', () => {
+                    this.fileInput.click();
+                });
+
+                // Select files button
+                this.selectFilesBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.fileInput.click();
+                });
+
+                // File input change
+                this.fileInput.addEventListener('change', (e) => {
+                    this.handleFiles(e.target.files);
+                });
+
+                // Drag and drop events
+                this.uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.add('dragover');
+                });
+
+                this.uploadArea.addEventListener('dragleave', () => {
+                    this.uploadArea.classList.remove('dragover');
+                });
+
+                this.uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.remove('dragover');
+                    
+                    if (e.dataTransfer.files.length > 0) {
+                        this.handleFiles(e.dataTransfer.files);
+                    }
+                });
+            }
+
+            handleFiles(files) {
+                const imageFiles = Array.from(files).filter(file => 
+                    file.type.startsWith('image/')
+                );
+
+                if (imageFiles.length === 0) {
+                    this.showStatus('Please select image files only', 'error');
+                    return;
+                }
+
+                this.fileInfo.textContent = `${imageFiles.length} file(s) selected`;
+                
+                // Upload each image
+                imageFiles.forEach(file => {
+                    this.uploadImage(file);
+                });
+            }
+
+            uploadImage(file) {
+                // Show progress bar
+                this.progressBar.style.display = 'block';
+                
+                // Simulate upload progress (replace with actual upload)
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += 10;
+                    this.progressFill.style.width = progress + '%';
+                    
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                        
+                        // Create preview
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            const photo = {
+                                id: Date.now() + Math.random().toString(36).substr(2, 9),
+                                name: file.name,
+                                size: this.formatFileSize(file.size),
+                                data: e.target.result,
+                                date: new Date().toLocaleDateString()
+                            };
+                            
+                            this.photos.unshift(photo);
+                            this.saveToStorage();
+                            this.renderGallery();
+                            
+                            // Hide progress bar after short delay
+                            setTimeout(() => {
+                                this.progressBar.style.display = 'none';
+                                this.showStatus('Upload complete!', 'success');
+                            }, 500);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                }, 100);
+            }
+
+            deletePhoto(id) {
+                this.photos = this.photos.filter(photo => photo.id !== id);
+                this.saveToStorage();
+                this.renderGallery();
+                this.showStatus('Photo deleted', 'success');
+            }
+
+            renderGallery() {
+                if (this.photos.length === 0) {
+                    this.gallery.innerHTML = `
+                        <div class="empty-state" style="grid-column: 1/-1;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                                <rect x="2" y="2" width="20" height="20" rx="2.18" />
+                                <path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5" />
+                            </svg>
+                            <p>No photos yet. Upload your first photo!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                this.gallery.innerHTML = this.photos.map(photo => `
+                    <div class="gallery-item" data-id="${photo.id}">
+                        <div class="image-container">
+                            <img src="${photo.data}" alt="${photo.name}">
+                        </div>
+                        <div class="item-details">
+                            <div class="item-name">${photo.name}</div>
+                            <div class="item-meta">
+                                <span class="item-size">${photo.size}</span>
+                                <button class="delete-btn" onclick="uploader.deletePhoto('${photo.id}')" title="Delete">
+                                    <img src="https://www.svgrepo.com/show/533007/trash.svg" class="h-4" alt="">
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            showStatus(message, type) {
+                this.uploadStatus.textContent = message;
+                this.uploadStatus.className = `upload-status show ${type}`;
+                
+                setTimeout(() => {
+                    this.uploadStatus.classList.remove('show');
+                }, 3000);
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            saveToStorage() {
+                localStorage.setItem('photos', JSON.stringify(this.photos));
+            }
+
+            loadFromStorage() {
+                const saved = localStorage.getItem('photos');
+                return saved ? JSON.parse(saved) : [];
+            }
+        }
+
+        // Initialize the uploader
+        const uploader = new PhotoUploader();
+    </script>
+</body>
+</html>
